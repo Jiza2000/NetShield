@@ -1,6 +1,7 @@
 import csv
 import os
 from collections import Counter
+from mitre import lookup
 
 SCAN_LOG = "netshield_alerts.csv"
 DNS_LOG = "netshield_dns_alerts.csv"
@@ -55,6 +56,7 @@ def generate_report():
     alerts.sort(key=lambda a: a["timestamp"])
     by_type = Counter(a["alert_type"] for a in alerts)
     by_risk = Counter(a["risk"] for a in alerts)
+    by_tactic = Counter(lookup(a["alert_type"])["tactic"] for a in alerts)
 
     print("\n" + "=" * 46)
     print("     NETSHIELD SUMMARY")
@@ -62,15 +64,18 @@ def generate_report():
     print(f"Total alerts : {len(alerts)}")
     print("By type      : " + ", ".join(f"{k} ({v})" for k, v in by_type.items()))
     print("By risk      : " + ", ".join(f"{k} ({v})" for k, v in by_risk.items()))
+    print("By tactic    : " + ", ".join(f"{k} ({v})" for k, v in by_tactic.items()))
     print()
 
     for a in alerts:
+        m = lookup(a["alert_type"])
         print("=" * 46)
         print(f"  [{a['risk']}] {a['alert_type']}")
         print("=" * 46)
         print(f"Timestamp : {a['timestamp']}")
         print(f"Source IP : {a['source_ip']}")
         print(f"Evidence  : {a['evidence']}")
+        print(f"MITRE     : {m['technique']} {m['name']} ({m['tactic']})")
         print(f"Reason    : {a['reason']}")
         print(f"Action    : {a['action']}")
         print()
